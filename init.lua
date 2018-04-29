@@ -1,3 +1,14 @@
+-- This is a configuration for Hammerspoon:
+-- Modification Keys: Cmd + Ctrl (⌘ + ⌃)
+-- 1. Currently support window layout management:
+--   - ⌘ ⌃ + H, Toggle current window to left/restore;
+--   - ⌘ ⌃ + L, Toggle current window to right/restore;
+--   - ⌘ ⌃ + M, Toggle current window to maximize/restore;
+-- 2. Currently support audio output device swith:
+--   - ⌘ ⌃ + ], Switch to previous audio output device;
+--   - ⌘ ⌃ + [, Switch to next audio output device;
+--   - ⌘ ⌃ + A, Show current audio output device;
+  
 hs.window.animationDuration = 0
 previousFrameSizes = {}
 modificationKeys = {"cmd", "ctrl"}
