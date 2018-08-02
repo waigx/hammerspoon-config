@@ -7,7 +7,9 @@
 -- 2. Currently support audio output device swith:
 --   - ⌘ ⌃ + ], Switch to previous audio output device;
 --   - ⌘ ⌃ + [, Switch to next audio output device;
---   - ⌘ ⌃ + A, Show current audio output device;
+--   - ⌘ ⌃ + C, Show current audio output device;
+-- 3. Eject devices:
+--   - ⌘ ⌃ + J, Eject all removalbe drives;
   
 hs.window.animationDuration = 0
 previousFrameSizes = {}
@@ -96,7 +98,7 @@ function bindAudioDeviceKeys(key, get_output_dev_fn)
 	hs.hotkey.bind(modificationKeys, key, function()
 		local outputDevice = get_output_dev_fn()
 		if not outputDevice then
-			hs.notify.new({title="Output Device:", "No Next Output Device Found."}):send()
+			hs.notify.new({title="Output Device:", informativeText="No Next Output Device Found."}):send()
 		else
 			outputDevice:setDefaultOutputDevice()
 			hs.notify.new({title="Output Device:", informativeText=hs.audiodevice.defaultOutputDevice():name()}):send()
@@ -127,10 +129,30 @@ function getNextOutputDevice(inc)
 	end
 end
 
+function ejectAllVolumes()
+	local allVolumes = hs.fs.volume.allVolumes()
+	local n = 0
+
+	for path, volume in pairs(allVolumes) do
+		if volume.NSURLVolumeIsInternalKey == false then
+			hs.notify.new({title="Eject Drive:", informativeText=volume.NSURLVolumeNameKey}):send()
+			hs.fs.volume.eject(path)
+			n = n + 1
+		end
+	end
+
+	if n == 0 then
+		hs.notify.new({title="Eject Drive:", informativeText="No Removable Disk Detected."}):send()
+	end
+end
+
+
 bindResizeAndRestoreToKeys("M", getMaxWinFrame)
 bindResizeAndRestoreToKeys("H", getFillLeftWinFrame)
 bindResizeAndRestoreToKeys("L", getFillRightWinFrame)
 
 bindAudioDeviceKeys("[", function() return getNextOutputDevice(1) end)
 bindAudioDeviceKeys("]", function() return getNextOutputDevice(-1) end)
-bindAudioDeviceKeys("A", function() return hs.audiodevice.defaultOutputDevice() end)
+bindAudioDeviceKeys("C", function() return hs.audiodevice.defaultOutputDevice() end)
+
+hs.hotkey.bind(modificationKeys, "J", ejectAllVolumes)
