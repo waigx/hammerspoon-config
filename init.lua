@@ -8,17 +8,22 @@
 --   - ⌘ ⌃ + ], Switch to previous audio output device;
 --   - ⌘ ⌃ + [, Switch to next audio output device;
 --   - ⌘ ⌃ + C, Show current audio output device;
--- 3. Eject devices:
+--   - ⌘ ⌃ + T, Toggle latest two output devices;
+-- 3. Eject all devices:
 --   - ⌘ ⌃ + J, Eject all removalbe drives;
-  
+
 hs.window.animationDuration = 0
 previousFrameSizes = {}
+audioDeviceQueue = {
+	old = hs.audiodevice.defaultOutputDevice(),
+	new = hs.audiodevice.defaultOutputDevice()
+}
 modificationKeys = {"cmd", "ctrl"}
 
-hs.hotkey.bind(modificationKeys, "T", function()
-	local curWin = hs.window.focusedWindow()
-	hs.alert.show(test[curWin.__tostring])
-end)
+-- hs.hotkey.bind(modificationKeys, "T", function()
+-- 	local curWin = hs.window.focusedWindow()
+-- 	hs.alert.show(test[curWin.__tostring])
+-- end)
 
 hs.hotkey.bind(modificationKeys, "R", function()
 	hs.reload()
@@ -106,6 +111,21 @@ function bindAudioDeviceKeys(key, get_output_dev_fn)
 	end)
 end
 
+function pushPopAudioDeviceQueue(newAudioDevice)
+	local popedDevice = audioDeviceQueue.old
+	audioDeviceQueue.old = audioDeviceQueue.new
+	audioDeviceQueue.new = newAudioDevice
+	return popedDevice
+end
+
+function audioDeviceEventHandler(event)
+	if event == "dOut" then
+		if hs.audiodevice.defaultOutputDevice():uid() ~= audioDeviceQueue.new:uid() then
+			pushPopAudioDeviceQueue(hs.audiodevice.defaultOutputDevice())
+		end
+	end
+end
+
 function getNextOutputDevice(inc)
 	local currentOutputDevice = hs.audiodevice.defaultOutputDevice()
 	local allOutputDevices = hs.audiodevice.allOutputDevices()
@@ -154,5 +174,14 @@ bindResizeAndRestoreToKeys("L", getFillRightWinFrame)
 bindAudioDeviceKeys("[", function() return getNextOutputDevice(1) end)
 bindAudioDeviceKeys("]", function() return getNextOutputDevice(-1) end)
 bindAudioDeviceKeys("C", function() return hs.audiodevice.defaultOutputDevice() end)
+bindAudioDeviceKeys("T", function()
+	local targetAudioDevice = audioDeviceQueue.old
+	pushPopAudioDeviceQueue(targetAudioDevice)
+	return targetAudioDevice
+end)
 
+-- hs.hotkey.bind({"ctrl"}, "[", function () hs.eventtap.keyStroke({}, "escape") end)
 hs.hotkey.bind(modificationKeys, "J", ejectAllVolumes)
+
+hs.audiodevice.watcher.setCallback(audioDeviceEventHandler)
+hs.audiodevice.watcher.start()
